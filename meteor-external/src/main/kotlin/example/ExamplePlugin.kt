@@ -50,6 +50,7 @@ class ExamplePlugin : Plugin() {
         if (ticktimer > 0) {
             ticktimer--
             println(ticktimer)
+
             return
         }
         if (Bank.Inventory.getFirst("Law rune") == null) {
