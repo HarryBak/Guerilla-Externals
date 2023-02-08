@@ -29,12 +29,11 @@ import java.util.*
     external = true
 )
 //// Logic.
-/// One - Check coords, we start at bank.
+/// One - Check coords, we start at bank. - Check Prayer and Reset if necessary
 /// Two - check inventory, it should be empty.
-/// Three - walk to bank
+/// Three - walk to mushrooms
+///
 class ExamplePlugin : Plugin() {
-
-
 //    var overlay = overlay(mortmyre.ExampleOverlay(this))
 
     val objects = Objects
@@ -43,7 +42,9 @@ class ExamplePlugin : Plugin() {
     var state: String = "Startup"
     val mushroomsFinal = Walker.nearestWalkableTile(WorldPoint(3667, 3255, 0))
     val mushroomsArea = WorldArea(3667, 3255, 0, 2, 0)
-    private val bankArea = WorldArea(4652, 3208, 2, 6, 0)
+    private val bankArea = WorldArea(3652, 3208, 2, 6, 0)
+    private val drakansTeleArea = WorldArea(3649, 3230, 2, 6, 0)
+
 
     val bank = WorldPoint(3652, 3208, 0)
     private var ticktimer = 5
@@ -51,26 +52,44 @@ class ExamplePlugin : Plugin() {
     override fun onGameTick(it: GameTick) {
         if (ticktimer > 0) {
             ticktimer--
+            println(state)
             return
         }
-        val location = client.localPlayer!!.worldLocation
+        var location: WorldPoint = client.localPlayer!!.worldLocation
+        if (Items.isFull()) {
+            state = "Banking"
+            bankFungus()
+        }
+        else if (state == "Banking") {
+            bankFungus()
+        }
+        else if (mushroomsArea.contains(location)) {
+            println("We are at mushrooms.")
+            harvestMushrooms()
+            ticktimer = 1
+        }
+        else if (state == "Harvest") {
+            harvestMushrooms()
+        }
+        else if (!mushroomsArea.contains(location) && !Items.isFull()) {
+            walkToMushrooms(location)
+        }
 
-        if (state == "Startup" && client.localPlayer?.isIdle == true &&
-            !mushroomsArea.contains(location)
-        ) {
-            Movement.walkTo(mushroomsFinal)
-        } else if (state == "Startup"
-            && client.localPlayer?.isIdle == true
-            && mushroomsArea.contains(location)
-        )
-            println("We made it here!")
-        state = "Bloom"
-//        if (Items.equipmentContains("Enchanted emerald sickle (b)")) {
+        else if (state == "GoToBank") {
+            bankFungus()
+        }
+
+
+    }
+
+    private fun harvestMushrooms() {
+        //        if (Items.equipmentContains("Enchanted emerald sickle (b)")) {
+        state = "Harvest"
         if (Items.inventoryContains("Enchanted emerald sickle (b)")) {
             println("Found sickle!")
             if (Items.isFull()) {
-//                drakansTeleport()
-                bankFungus()
+                state = "Banking"
+                return
             }
             if (!Items.isFull()) {
                 Objects.getAll(3509)?.forEach {
@@ -79,24 +98,27 @@ class ExamplePlugin : Plugin() {
                 }
                 println("Inventory not full")
 
-                if (!client.localPlayer?.isAnimating!!) {
+
+                if (!client.localPlayer?.isAnimating!! && (Objects.getAll(3509).isNullOrEmpty())) {
                     println("finding fungi....")
+                    if (client.localPlayer!!.worldLocation == mushroomsFinal) {
 //                    Items.getFirst(ItemID.ENCHANTED_EMERALD_SICKLE_B, InventoryID.EQUIPMENT)?.interact(1)
-                    if (Objects.getAll(3509).isNullOrEmpty()) {
                         Items.getFirst(ItemID.ENCHANTED_EMERALD_SICKLE_B, InventoryID.INVENTORY).let {
                             print(it?.name)
                             it?.interact("Cast Bloom")
+                            ticktimer = 1
                         }
-                    }
-                    println(ticktimer)
-
-
+                    } else Movement.walkTo(mushroomsFinal)
                 }
-
             }
+
         }
     }
 
+    private fun walkToMushrooms(location: WorldPoint) {
+        Movement.walkTo(mushroomsFinal)
+        if (mushroomsArea.contains(location)) return else ticktimer = 1
+    }
 
     private fun checkPrayer() {
         if (client.getBoostedSkillLevel(Skill.PRAYER) > 20) {
@@ -104,16 +126,21 @@ class ExamplePlugin : Plugin() {
             Items.getFirst(ItemID.ARDOUGNE_CLOAK_2).let {
                 it?.interact("Kandarin Monastery")
             }
+            ticktimer = 10
             Objects.getFirst(409).let {
                 it?.interact("Pray-at")
             }
+            ticktimer = 5
+            return
         }
     }
 
     private fun drakansTeleport() {
+        state = "Teleporting"
         println("Trying to teleport...")
         Items.getFirst(ItemID.DRAKANS_MEDALLION, InventoryID.INVENTORY)?.interact("Ver Sinhaza")
-        ticktimer = 10
+        state = "GoToBank"
+        return
     }
 
     private fun openBank() {
@@ -132,37 +159,30 @@ class ExamplePlugin : Plugin() {
     }
 
     private fun bankFungus() {
-        if (!Bank.isOpen()) {
-            if (!Movement.isRunEnabled()) {
-                Movement.toggleRun()
+        var location: WorldPoint = client.localPlayer!!.worldLocation
+
+        if (!drakansTeleArea.contains(location) && state == "Teleporting") {
+            drakansTeleport()
+        } else {
+            ticktimer = 5
+            if (!Bank.isOpen()) {
+                if (!Movement.isRunEnabled()) {
+                    Movement.toggleRun()
+                }
+                openBank()
             }
-            openBank()
-        }
 
 
-        if (Items.inventoryContains(ItemID.MORT_MYRE_FUNGUS)) {
-            val kebab = Items.getFirst(ItemID.MORT_MYRE_FUNGUS)
-            Items.deposit(kebab!!, 9999)
+            if (Items.inventoryContains(ItemID.MORT_MYRE_FUNGUS)) {
+                val kebab = Items.getFirst(ItemID.MORT_MYRE_FUNGUS)
+                Items.deposit(kebab!!, 9999)
+                ticktimer = 2
+                state = "Harvest"
+                return
+            }
             ticktimer = 2
-            return
         }
-        ticktimer = 2
     }
-
-
-//        if (client.localPlayer?.isIdle == true && !Bank.isOpen() && Items.getAll() != null) {
-//            useBank()
-//        }
-//        else if (Bank.isOpen()) {
-//            depositAll()
-//            if (Items.getAll() == null) {
-//                Movement.walkTo(mushrooms)
-//            }
-//            else {
-//                println("Items not null, not closing")
-//            }
-//        }
-
 
     private fun logout() {
         val logoutButton = client.getWidget(182, 8)

@@ -1,15 +1,19 @@
+
+
+
+
 version = "1.0.0"
 
-project.extra["PluginName"] = "ExampleSecond"
-project.extra["PluginDescription"] = "This is another example plugin these do nothing"
+project.extra["PluginName"] = "Playground666666666666"
+project.extra["PluginDescription"] = "This is an example plugin with a longer description so I can est the text-field constrainsts "
 
-val pluginClass by rootProject.extra { "example.ExampleSecondPlugin" }
-
+val pluginClass by rootProject.extra { "example.ExamplePlugin2" }
 
 
 tasks {
     jar {
         manifest {
+
             attributes(mapOf(
                 "Main-Class" to pluginClass,
                 "Plugin-Version" to project.version,
