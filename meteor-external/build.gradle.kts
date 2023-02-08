@@ -4,7 +4,7 @@
 
 version = "1.0.0"
 
-project.extra["PluginName"] = "ExamplePlugin"
+project.extra["PluginName"] = "Playground"
 project.extra["PluginDescription"] = "This is an example plugin with a longer description so I can est the text-field constrainsts "
 
 val pluginClass by rootProject.extra { "example.ExamplePlugin" }

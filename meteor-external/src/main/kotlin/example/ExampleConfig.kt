@@ -14,15 +14,27 @@ import meteor.config.legacy.ConfigItem
 interface ExampleConfig : Config {
 
     @ConfigItem(
-        keyName = "Example",
-        name = "Example",
-        description = "",
+        keyName = "MinimumDelay",
+        name = "Minimum Delay(Ticks)",
+        description = "How long you wait between casting the next spell(minimum)",
         position = 0,
 
     )
-    fun example(): String {
-        return "Something"
+    fun MinimumDelay(): Int {
+        return 1
     }
+
+    @ConfigItem(
+        keyName = "MaximumDelay",
+        name = "Maximum Delay (Ticks)",
+        description = "How long you wait between casting the next spell (max)",
+        position = 1,
+
+        )
+    fun MaximumDelay(): Int {
+        return 5
+    }
+
 
 
 
